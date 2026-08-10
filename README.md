@@ -1,59 +1,75 @@
-# tripplanner
 ✈️ Trip Planner
 
-An AI-powered trip planning tool that researches, filters, and ranks sights and restaurants for international travel — built as a single-page web app running inside Claude Cowork.
+An AI-powered trip planning tool that researches, filters, and ranks sights and restaurants for international travel. Enter a destination, get a ranked shortlist with ratings, reviews, a pin map, and one-click export to text or spreadsheet.
 
-What it does
-
-Enter a destination city and the tool returns a ranked shortlist of places to visit or eat, with quality summaries, star ratings, traveler reviews, and walkability notes. A pin map shows the spatial layout of all results. You make the final call — the AI never decides for you.
-
-Key principle: AI narrows and ranks. Human chooses.
+Key principle: AI narrows and ranks. You make the final call.
 
 Features
 🏛 Separate sections for Sights and Restaurants
-⭐ Star ratings + traveler review quotes for each result
+⭐ Star ratings + traveler review quotes per result
 📍 SVG pin map with color-coded pins (gold = top pick, teal = sight, orange = restaurant)
 🗺 Open in Google Maps link for multi-stop directions
 🔗 Google + TripAdvisor search links per location
 ✅ Per-card deselect toggle — uncheck any result to exclude it
-📋 Copy Text — formatted itinerary text for the selected picks
-📊 Copy Table — TSV format that pastes directly into Google Sheets or Excel
-Filters by neighborhood, count (3 / 5 / 7 results), and custom notes/preferences
+📋 Copy Text — formatted itinerary for selected picks
+📊 Copy Table — TSV that pastes directly into Google Sheets or Excel
+Setup
 
-How to use
-Open the tool in Claude Cowork
-Enter your destination city
-Choose Sights, Restaurants, or Both
-Optionally add a neighborhood focus, result count, and any preferences (e.g. "no tourist traps")
-Click Find Top Picks
-Review the ranked results, map, and links
-Uncheck any picks you don't want
-Use Copy Text to paste into a notes app or Copy Table to paste into a spreadsheet
-Tech
-Single-file HTML/CSS/JS — no framework, no build step
-AI calls powered by window.cowork.askClaude() (Claude Cowork built-in — no API key required)
-Map rendered as inline SVG using coordinates returned by Claude
-Google Maps directions link constructed from clean search_name fields
-Limitations
-Requires Claude Cowork to run — window.cowork.askClaude() is only available inside the Cowork environment
-Map shows approximate pin positions based on Claude's coordinate estimates, not live GPS data
-Review quotes are synthesized consensus from Claude's training data, not scraped live
+Requirements: Node.js 18+, an Anthropic API key
+
+bash
+# 1. Clone the repo
+git clone https://github.com/yourusername/trip-planner.git
+cd trip-planner
+
+# 2. Install dependencies
+npm install
+
+# 3. Add your API key
+cp .env.example .env
+# Open .env and paste your Anthropic API key
+
+# 4. Start the server
+npm start
+
+Then open http://localhost:3000 in your browser.
+
+How it works
+
+server.js is a minimal Express server that serves the frontend and proxies AI requests to the Anthropic API — your API key stays on the server and is never exposed to the browser.
+
+browser → POST /api/chat → server.js → Anthropic API → response → browser
+Project structure
+trip-planner/
+├── public/
+│   └── index.html   # Single-page frontend (HTML/CSS/JS)
+├── server.js        # Express server + Anthropic API proxy
+├── package.json
+├── .env.example     # Copy to .env and add your API key
+├── .gitignore       # Excludes .env and node_modules
+└── README.md
+Deploying (optional)
+
+To share it with others, deploy to Railway or Render (both have free tiers):
+
+Push this repo to GitHub
+Connect the repo in Railway/Render
+Add ANTHROPIC_API_KEY as an environment variable in the dashboard
+Deploy — they'll run npm start automatically
 Project context
 
-Built as part of the TMMBA 522 IMPACT framework project. Modules completed:
+Built as part of the TMMBA 522 IMPACT framework project.
 
 Module	Topic	Status
 1	Intent — problem, stakes, success metric	✅
-2	Mental Model — AI vs. human task ownership, autonomy ladder	✅
+2	Mental Model — AI vs. human task ownership	✅
 3	Plumbing — n8n automation for geocoding + walking distances	✅
 4	UI — this tool	✅
 
-v1 success metric: Go from no candidates to a ranked shortlist ready to choose from, for a full 2-week trip, in under one hour.
-
-Parked for later versions: group coordination with trip partners, day sequencing and pacing, bookings.
+v1 success metric: From no candidates to a ranked shortlist for a 2-week trip in under one hour.
 
 Future ideas
-Connect to Google Sheets to read/write trip itinerary data directly
-Live distance calculation using the existing n8n + OpenRouteService automation
-Day sequencing view — arrange selected picks into a walking route
+Connect to Google Sheets to read/write itinerary data
+Live walking distances via the n8n + OpenRouteService automation
+Day sequencing — arrange picks into a walking route
 Export to PDF itinerary
