@@ -1,6 +1,4 @@
 # tripplanner
-Trip Planner takes in your desired location and creates a recommended list of sights and restaurants.
-
 ✈️ Trip Planner
 
 An AI-powered trip planning tool that researches, filters, and ranks sights and restaurants for international travel — built as a single-page web app running inside Claude Cowork.
