@@ -19,6 +19,7 @@ Features
 📋 Copy Text — formatted itinerary text for the selected picks
 📊 Copy Table — TSV format that pastes directly into Google Sheets or Excel
 Filters by neighborhood, count (3 / 5 / 7 results), and custom notes/preferences
+
 How to use
 Open the tool in Claude Cowork
 Enter your destination city
