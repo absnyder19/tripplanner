@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trip Planner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --teal: #0d9488;
+      --teal-light: #ccfbf1;
+      --teal-mid: #5eead4;
+      --dark: #1e293b;
+      --mid: #475569;
+      --soft: #94a3b8;
+      --bg: #f8fafc;
+      --white: #ffffff;
+      --border: #e2e8f0;
+      --gold: #f59e0b;
+      --gold-light: #fef3c7;
+      --red-light: #fee2e2;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon { font-size: 22px; }
+    .header h1 { font-size: 18px; font-weight: 700; color: var(--dark); }
+    .header span { font-size: 13px; color: var(--soft); margin-left: 4px; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; padding: 32px 24px; max-width: 640px; margin: 0 auto; }
+    .screen.active { display: block; }
+
+    /* ── ENTRY FORM ── */
+    .form-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .form-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .form-card p { font-size: 14px; color: var(--mid); margin-bottom: 24px; }
+
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mid);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .field input, .field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      color: var(--dark);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    .field input:focus, .field textarea:focus {
+      border-color: var(--teal);
+      background: var(--white);
+    }
+    .field textarea { resize: vertical; min-height: 80px; }
+
+    .toggle-group { display: flex; gap: 8px; }
+    .toggle-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--mid);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .toggle-btn.active { background: var(--teal); border-color: var(--teal); color: var(--white); }
+
+    .count-group { display: flex; gap: 8px; }
+    .count-btn {
+      width: 48px; height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      font-size: 15px; font-weight: 600;
+      color: var(--mid);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .count-btn.active { background: var(--teal-light); border-color: var(--teal); color: var(--teal); }
+
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: var(--teal); color: var(--white);
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 600;
+      cursor: pointer; margin-top: 8px;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #0f766e; }
+    .btn-primary:disabled { background: var(--soft); cursor: not-allowed; }
+
+    /* ── LOADING ── */
+    #screen-loading { text-align: center; padding-top: 80px; }
+    .loader-icon { font-size: 48px; margin-bottom: 20px; animation: bob 2s ease-in-out infinite; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .loader-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .loader-msg { font-size: 15px; color: var(--mid); min-height: 22px; transition: opacity 0.3s; }
+    .loader-bar { margin: 24px auto; width: 200px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .loader-fill { height: 100%; background: var(--teal); border-radius: 2px; animation: fill 5s linear infinite; }
+    @keyframes fill { 0% { width: 0%; } 100% { width: 100%; } }
+
+    /* ── RESULTS ── */
+    .results-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
+    .results-header h2 { font-size: 20px; font-weight: 700; }
+    .results-meta { font-size: 13px; color: var(--soft); }
+
+    .top-pick-card {
+      background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+      border-radius: 14px; padding: 22px; color: var(--white);
+      margin-bottom: 20px; position: relative; overflow: hidden;
+    }
+    .top-pick-card::before { content: '✦'; position: absolute; right: 20px; top: 16px; font-size: 28px; opacity: 0.25; }
+    .top-pick-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.8; margin-bottom: 6px; }
+    .top-pick-name { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .top-pick-reason { font-size: 14px; opacity: 0.9; line-height: 1.5; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--mid);
+      margin: 20px 0 10px;
+    }
+    .section-header:first-child { margin-top: 0; }
+    .section-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; text-transform: none; letter-spacing: 0; }
+    .pill-sight { background: var(--teal-light); color: var(--teal); }
+    .pill-restaurant { background: #fff7ed; color: #c2410c; }
+
+    .shortlist { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+    .result-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px;
+      position: relative; transition: opacity 0.2s, border-color 0.2s;
+    }
+    .result-card.deselected { opacity: 0.42; }
+    .result-card.deselected .rank-badge { background: #f1f5f9; color: var(--soft); }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .card-left { display: flex; gap: 16px; align-items: flex-start; flex: 1; }
+
+    .rank-badge {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--teal-light); color: var(--teal);
+      font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .result-info { flex: 1; }
+    .result-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .result-why { font-size: 14px; color: var(--mid); line-height: 1.5; margin-bottom: 8px; }
+    .walkability-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--teal-light); color: var(--teal);
+      font-size: 12px; font-weight: 500;
+      padding: 3px 9px; border-radius: 20px;
+    }
+
+    .rating-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .stars { color: #f59e0b; font-size: 13px; letter-spacing: 1px; }
+    .rating-score { font-size: 13px; font-weight: 600; color: var(--dark); }
+
+    .review-quote {
+      font-size: 13px; color: var(--mid); font-style: italic;
+      line-height: 1.5; margin-bottom: 8px;
+      padding-left: 10px; border-left: 2px solid var(--teal-mid);
+    }
+
+    .source-link {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 12px; color: var(--teal);
+      text-decoration: none; font-weight: 500; margin-top: 6px;
+    }
+    .source-link:hover { text-decoration: underline; }
+
+    .deselect-btn {
+      flex-shrink: 0; width: 22px; height: 22px;
+      border-radius: 6px; border: 1.5px solid var(--border);
+      background: var(--white); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; transition: all 0.15s; margin-top: 2px;
+    }
+    .deselect-btn.checked { background: var(--teal); border-color: var(--teal); color: white; }
+    .deselect-btn.checked::after { content: '✓'; }
+    .deselect-btn:not(.checked) { background: #f1f5f9; }
+    .deselect-btn:not(.checked)::after { content: '−'; color: var(--soft); }
+
+    .filtered-section { margin-bottom: 24px; }
+    .filtered-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--soft); margin-bottom: 10px; }
+    .filtered-list { display: flex; flex-direction: column; gap: 6px; }
+    .filtered-item { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; gap: 10px; align-items: baseline; }
+    .filtered-name { font-size: 14px; font-weight: 500; white-space: nowrap; }
+    .filtered-reason { font-size: 13px; color: var(--soft); }
+
+    .copy-status { font-size: 12px; color: var(--soft); margin-bottom: 8px; text-align: right; }
+    .copy-status span { font-weight: 600; color: var(--teal); }
+
+    .result-actions { display: flex; gap: 10px; }
+    .btn-secondary {
+      flex: 1; padding: 12px;
+      border: 1px solid var(--border); background: var(--white);
+      border-radius: 10px; font-size: 14px; font-weight: 500;
+      color: var(--mid); cursor: pointer; transition: all 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--teal); color: var(--teal); }
+    .btn-teal {
+      flex: 1; padding: 12px;
+      background: var(--teal); border: none;
+      border-radius: 10px; font-size: 14px; font-weight: 600;
+      color: var(--white); cursor: pointer; transition: background 0.15s;
+    }
+    .btn-teal:hover { background: #0f766e; }
+
+    .error-box {
+      background: var(--red-light); border: 1px solid #fca5a5;
+      border-radius: 10px; padding: 14px 16px;
+      font-size: 14px; color: #991b1b;
+      margin-top: 12px; display: none;
+    }
+
+    .optional-tag { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--soft); margin-left: 4px; }
+
+    /* ── MAP ── */
+    .map-section { margin-bottom: 20px; }
+    .map-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--soft); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .map-gmaps-link { font-size: 12px; color: var(--teal); text-decoration: none; font-weight: 500; text-transform: none; letter-spacing: 0; }
+    .map-gmaps-link:hover { text-decoration: underline; }
+    .map-container { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #dce9f0; }
+    #map-svg { width: 100%; display: block; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">✈️</div>
+  <h1>Trip Planner</h1>
+  <span>AI-ranked picks, you choose</span>
+</div>
+
+<!-- SCREEN 1: ENTRY -->
+<div id="screen-entry" class="screen active">
+  <div class="form-card">
+    <h2>Where are you headed?</h2>
+    <p>Tell me your destination and I'll research and rank the best options for you.</p>
+
+    <div class="field">
+      <label>Destination City</label>
+      <input type="text" id="city" placeholder="e.g. Lisbon, Tokyo, Rome" />
+    </div>
+
+    <div class="field">
+      <label>What to find</label>
+      <div class="toggle-group">
+        <div class="toggle-btn active" data-cat="sights">🏛 Sights</div>
+        <div class="toggle-btn" data-cat="restaurants">🍽 Restaurants</div>
+        <div class="toggle-btn" data-cat="both">✨ Both</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Number of picks</label>
+      <div class="count-group">
+        <button class="count-btn" data-n="3">3</button>
+        <button class="count-btn active" data-n="5">5</button>
+        <button class="count-btn" data-n="7">7</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Neighborhood or Area <span class="optional-tag">(optional)</span></label>
+      <input type="text" id="neighborhood" placeholder="e.g. Alfama, Shibuya, Trastevere" />
+    </div>
+
+    <div class="field">
+      <label>Notes or Preferences <span class="optional-tag">(optional)</span></label>
+      <textarea id="notes" placeholder="e.g. no tourist traps, vegetarian-friendly, hidden gems only…"></textarea>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+    <button class="btn-primary" id="btn-search">Find Top Picks →</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: LOADING -->
+<div id="screen-loading" class="screen">
+  <div class="loader-icon">🧭</div>
+  <div class="loader-title">Researching your destination…</div>
+  <div class="loader-msg" id="loader-msg">Scanning local favorites…</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- SCREEN 3: RESULTS -->
+<div id="screen-results" class="screen">
+  <div class="results-header">
+    <h2 id="results-title">Top Picks</h2>
+    <span class="results-meta" id="results-meta"></span>
+  </div>
+
+  <div class="top-pick-card">
+    <div class="top-pick-label">⭐ Top Pick</div>
+    <div class="top-pick-name" id="top-pick-name"></div>
+    <div class="top-pick-reason" id="top-pick-reason"></div>
+  </div>
+
+  <div class="map-section" id="map-section" style="display:none">
+    <div class="map-label">
+      <span>📍 Map View</span>
+      <a id="map-gmaps-link" href="#" target="_blank" class="map-gmaps-link">Open in Google Maps ↗</a>
+    </div>
+    <div class="map-container">
+      <svg id="map-svg" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <div class="shortlist" id="shortlist"></div>
+
+  <div class="filtered-section" id="filtered-section" style="display:none">
+    <div class="filtered-label">Also considered — filtered out</div>
+    <div class="filtered-list" id="filtered-list"></div>
+  </div>
+
+  <div class="copy-status" id="copy-status"></div>
+  <div class="result-actions">
+    <button class="btn-secondary" id="btn-restart">← Start Over</button>
+    <button class="btn-teal" id="btn-copy">Copy Text</button>
+    <button class="btn-teal" id="btn-copy-table" style="background:#0f766e;">Copy Table</button>
+  </div>
+</div>
+
+<script>
+  // ── STATE ──
+  let selectedCategory = 'sights';
+  let selectedCount = 5;
+
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCategory = btn.dataset.cat;
+    });
+  });
+
+  document.querySelectorAll('.count-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCount = parseInt(btn.dataset.n);
+    });
+  });
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── LOADER ──
+  const loaderMessages = [
+    'Scanning local favorites…', 'Weighing quality signals…',
+    'Checking walkability…', 'Filtering out the tourist traps…',
+    'Ranking by quality and proximity…', 'Almost ready…'
+  ];
+  let loaderInterval;
+  function startLoader() {
+    let i = 0;
+    const el = document.getElementById('loader-msg');
+    el.textContent = loaderMessages[0];
+    loaderInterval = setInterval(() => {
+      i = (i + 1) % loaderMessages.length;
+      el.style.opacity = 0;
+      setTimeout(() => { el.textContent = loaderMessages[i]; el.style.opacity = 1; }, 300);
+    }, 2200);
+  }
+  function stopLoader() { clearInterval(loaderInterval); }
+
+  // ── SEARCH ──
+  document.getElementById('btn-search').addEventListener('click', async () => {
+    const city = document.getElementById('city').value.trim();
+    const neighborhood = document.getElementById('neighborhood').value.trim();
+    const notes = document.getElementById('notes').value.trim();
+    const errorBox = document.getElementById('error-box');
+    errorBox.style.display = 'none';
+
+    if (!city) {
+      errorBox.textContent = 'Please enter a destination city.';
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    showScreen('screen-loading');
+    startLoader();
+
+    const catLabel = selectedCategory === 'both' ? 'sights and restaurants' : selectedCategory;
+    const userMsg = [
+      `Research ${catLabel} in ${city}${neighborhood ? `, specifically in ${neighborhood}` : ''}.`,
+      `Return ${selectedCount} ranked options.`,
+      notes ? `Additional preferences: ${notes}` : ''
+    ].filter(Boolean).join(' ');
+
+    const systemPrompt = `You are a trip-planning research assistant. Your job is to research, filter, and rank candidate sights and restaurants for international travel itineraries.
+
+Your role:
+- Retrieve candidate options for a given city or neighborhood
+- Summarize what makes each option notable (quality signals, traveler consensus, what's unique)
+- Rank candidates by two criteria: overall quality and walkability to nearby stops
+- Present a shortlist of the requested number of ranked options per category with reasoning
+
+What you never do:
+- Make the final selection — the human always chooses
+- Book or confirm anything
+- Sequence the full day or plan logistics beyond walking distance
+
+How to rank:
+Quality: weight traveler consensus, local reputation, and distinctiveness over star counts.
+Walkability: flag if candidates cluster near each other. Note approximate proximity in plain language ("~10 min walk from X").
+
+IMPORTANT: Return your response as valid JSON only — no markdown fences, no extra text, nothing before or after the JSON object. Use this exact structure:
+{
+  "top_pick": "Place Name",
+  "top_pick_reason": "One sentence on why this is the top pick.",
+  "shortlist": [
+    {
+      "rank": 1,
+      "type": "sight",
+      "name": "Full descriptive display name",
+      "search_name": "Short Place Name",
+      "lat": 38.716,
+      "lng": -9.139,
+      "rating": 4.7,
+      "review": "A representative one-sentence traveler review quote or synthesized consensus.",
+      "why_its_good": "2-sentence quality summary.",
+      "walkability": "Walkability note."
+    }
+  ],
+  "filtered": [
+    {
+      "name": "Place Name",
+      "reason": "One-line reason it was filtered out."
+    }
+  ]
+}
+
+The "search_name" must be short and clean (2-4 words) for Google Maps. The "type" must be "sight" or "restaurant". Include approximate lat/lng for every shortlisted place.`;
+
+    try {
+      const fullPrompt = systemPrompt + '\n\nUser request: ' + userMsg;
+
+      // ── API CALL (server proxy) ──
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: fullPrompt })
+      });
+      if (!response.ok) throw new Error('Server error: ' + response.status);
+      const { text, error } = await response.json();
+      if (error) throw new Error(error);
+
+      stopLoader();
+
+      let cleaned = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+      const data = JSON.parse(cleaned);
+
+      renderResults(data, city, catLabel);
+      showScreen('screen-results');
+
+    } catch (err) {
+      stopLoader();
+      showScreen('screen-entry');
+      const eb = document.getElementById('error-box');
+      eb.textContent = 'Something went wrong: ' + (err.message || err);
+      eb.style.display = 'block';
+    }
+  });
+
+  // ── RENDER RESULTS ──
+  function renderResults(data, city, catLabel) {
+    document.getElementById('results-title').textContent = `Top Picks in ${city}`;
+    document.getElementById('results-meta').textContent = `${catLabel} · ${data.shortlist.length} ranked`;
+    document.getElementById('top-pick-name').textContent = data.top_pick;
+    document.getElementById('top-pick-reason').textContent = data.top_pick_reason;
+
+    const list = document.getElementById('shortlist');
+    list.innerHTML = '';
+    const selectedSet = new Set(data.shortlist.map(i => i.rank));
+
+    function updateCopyStatus() {
+      const total = data.shortlist.length;
+      document.getElementById('copy-status').innerHTML =
+        `<span>${selectedSet.size}</span> of ${total} selected`;
+    }
+
+    function starsHtml(r) {
+      return '★'.repeat(Math.floor(r)) + (r - Math.floor(r) >= 0.5 ? '½' : '');
+    }
+
+    function buildCard(item) {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.dataset.rank = item.rank;
+
+      const searchQuery = encodeURIComponent((item.search_name || item.name) + ' ' + city);
+      const googleUrl = `https://www.google.com/search?q=${searchQuery}`;
+      const tripUrl   = `https://www.tripadvisor.com/Search?q=${searchQuery}`;
+
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-left">
+            <div class="rank-badge">${item.rank}</div>
+            <div class="result-info">
+              <div class="result-name">${item.name}</div>
+              ${item.rating ? `<div class="rating-row"><span class="stars">${starsHtml(item.rating)}</span><span class="rating-score">${item.rating.toFixed(1)}</span></div>` : ''}
+              ${item.review ? `<div class="review-quote">"${item.review}"</div>` : ''}
+              <div style="display:flex;gap:10px;margin-top:6px;">
+                <a class="source-link" href="${googleUrl}" target="_blank" rel="noopener">Google ↗</a>
+                <a class="source-link" href="${tripUrl}" target="_blank" rel="noopener">TripAdvisor ↗</a>
+              </div>
+              <div class="result-why" style="margin-top:8px">${item.why_its_good}</div>
+              <span class="walkability-tag">🚶 ${item.walkability}</span>
+            </div>
+          </div>
+          <button class="deselect-btn checked" data-rank="${item.rank}"></button>
+        </div>
+      `;
+
+      card.querySelector('.deselect-btn').addEventListener('click', function() {
+        const rank = parseInt(this.dataset.rank);
+        if (selectedSet.has(rank)) {
+          selectedSet.delete(rank);
+          this.classList.remove('checked');
+          card.classList.add('deselected');
+        } else {
+          selectedSet.add(rank);
+          this.classList.add('checked');
+          card.classList.remove('deselected');
+        }
+        updateCopyStatus();
+      });
+
+      return card;
+    }
+
+    const sights      = data.shortlist.filter(i => i.type === 'sight');
+    const restaurants = data.shortlist.filter(i => i.type === 'restaurant');
+    const unsorted    = data.shortlist.filter(i => !i.type);
+
+    if (sights.length) {
+      const h = document.createElement('div');
+      h.className = 'section-header';
+      h.innerHTML = `🏛 Sights <span class="section-pill pill-sight">${sights.length} picks</span>`;
+      list.appendChild(h);
+      sights.forEach(i => list.appendChild(buildCard(i)));
+    }
+    if (restaurants.length) {
+      const h = document.createElement('div');
+      h.className = 'section-header';
+      h.innerHTML = `🍽 Restaurants <span class="section-pill pill-restaurant">${restaurants.length} picks</span>`;
+      list.appendChild(h);
+      restaurants.forEach(i => list.appendChild(buildCard(i)));
+    }
+    unsorted.forEach(i => list.appendChild(buildCard(i)));
+
+    updateCopyStatus();
+
+    // filtered
+    const filteredSection = document.getElementById('filtered-section');
+    const filteredList    = document.getElementById('filtered-list');
+    filteredList.innerHTML = '';
+    if (data.filtered && data.filtered.length) {
+      filteredSection.style.display = 'block';
+      data.filtered.forEach(f => {
+        const el = document.createElement('div');
+        el.className = 'filtered-item';
+        el.innerHTML = `<span class="filtered-name">${f.name}</span><span class="filtered-reason">— ${f.reason}</span>`;
+        filteredList.appendChild(el);
+      });
+    } else {
+      filteredSection.style.display = 'none';
+    }
+
+    renderMap(data.shortlist, city);
+    window._lastResults = { data, city, catLabel, selectedSet };
+  }
+
+  // ── MAP ──
+  function renderMap(shortlist, city) {
+    const places = shortlist.filter(p => p.lat != null && p.lng != null);
+    if (places.length < 2) { document.getElementById('map-section').style.display = 'none'; return; }
+
+    document.getElementById('map-section').style.display = 'block';
+
+    function mapName(p) {
+      if (p.search_name) return p.search_name + ', ' + city;
+      return p.name.replace(/\s*[–—\-]\s*.*/g, '').replace(/\s*\(.*?\)/g, '').trim() + ', ' + city;
+    }
+    const query = places.map(p => encodeURIComponent(mapName(p))).join('/');
+    document.getElementById('map-gmaps-link').href = `https://www.google.com/maps/dir/${query}`;
+
+    const SVG_W = 600, SVG_H = 280, PAD = 54;
+    const lats = places.map(p => p.lat), lngs = places.map(p => p.lng);
+    let minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    let minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const latMid = (minLat + maxLat) / 2, lngMid = (minLng + maxLng) / 2;
+    const latSpread = Math.max(maxLat - minLat, 0.012);
+    const lngSpread = Math.max(maxLng - minLng, 0.018);
+    minLat = latMid - latSpread * 0.6; maxLat = latMid + latSpread * 0.6;
+    minLng = lngMid - lngSpread * 0.6; maxLng = lngMid + lngSpread * 0.6;
+
+    function project(lat, lng) {
+      return {
+        x: PAD + ((lng - minLng) / (maxLng - minLng)) * (SVG_W - PAD * 2),
+        y: PAD + ((maxLat - lat) / (maxLat - minLat)) * (SVG_H - PAD * 2)
+      };
+    }
+
+    function pinColor(place, i) {
+      if (i === 0) return '#f59e0b';
+      return place.type === 'restaurant' ? '#ea580c' : '#0d9488';
+    }
+
+    const ns = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs) {
+      const e = document.createElementNS(ns, tag);
+      Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+      return e;
+    }
+
+    const svg = document.getElementById('map-svg');
+    svg.innerHTML = '';
+    svg.appendChild(el('rect', { x: 0, y: 0, width: SVG_W, height: SVG_H, fill: '#dce9f0' }));
+    for (let gx = 0; gx < SVG_W; gx += 40)
+      svg.appendChild(el('line', { x1: gx, y1: 0, x2: gx, y2: SVG_H, stroke: '#c8dde8', 'stroke-width': 0.5 }));
+    for (let gy = 0; gy < SVG_H; gy += 40)
+      svg.appendChild(el('line', { x1: 0, y1: gy, x2: SVG_W, y2: gy, stroke: '#c8dde8', 'stroke-width': 0.5 }));
+
+    const pts = places.map(p => project(p.lat, p.lng));
+    if (pts.length > 1) {
+      const d = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
+      svg.appendChild(el('path', { d, fill: 'none', stroke: '#94a3b8', 'stroke-width': 1.5, 'stroke-dasharray': '5,4', opacity: 0.7 }));
+    }
+
+    places.forEach((place, i) => {
+      const { x, y } = pts[i];
+      const color = pinColor(place, i);
+      const R = 14;
+      svg.appendChild(el('circle', { cx: x + 1, cy: y + 2, r: R, fill: 'rgba(0,0,0,0.15)' }));
+      svg.appendChild(el('circle', { cx: x, cy: y, r: R, fill: color, stroke: '#fff', 'stroke-width': 2 }));
+      const rt = el('text', { x, y: y + 1, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: '#fff', 'font-size': 11, 'font-weight': 700, 'font-family': 'system-ui, sans-serif' });
+      rt.textContent = place.rank;
+      svg.appendChild(rt);
+      const labelY = y + R + 13;
+      svg.appendChild(el('rect', { x: x - 52, y: labelY - 9, width: 104, height: 16, rx: 4, fill: 'rgba(255,255,255,0.88)' }));
+      const lt = el('text', { x, y: labelY + 1, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: '#1e293b', 'font-size': 9.5, 'font-weight': 600, 'font-family': 'system-ui, sans-serif' });
+      lt.textContent = (place.name.length > 22 ? place.name.slice(0, 20) + '…' : place.name);
+      svg.appendChild(lt);
+    });
+
+    const hasSights = places.some(p => p.type === 'sight');
+    const hasRests  = places.some(p => p.type === 'restaurant');
+    const legItems  = [{ color: '#f59e0b', label: '★ Top pick' }];
+    if (hasSights) legItems.push({ color: '#0d9488', label: '🏛 Sight' });
+    if (hasRests)  legItems.push({ color: '#ea580c', label: '🍽 Restaurant' });
+    const leg = el('g', { transform: 'translate(10,10)' });
+    legItems.forEach((item, li) => {
+      const gx = li * 90;
+      leg.appendChild(el('circle', { cx: gx + 7, cy: 8, r: 6, fill: item.color, stroke: '#fff', 'stroke-width': 1.5 }));
+      const t = el('text', { x: gx + 17, y: 9, 'dominant-baseline': 'middle', fill: '#1e293b', 'font-size': 9.5, 'font-family': 'system-ui, sans-serif', 'font-weight': 600 });
+      t.textContent = item.label;
+      leg.appendChild(t);
+    });
+    svg.appendChild(leg);
+  }
+
+  // ── CLIPBOARD ──
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    return Promise.resolve(fallbackCopy(text));
+  }
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+
+  // ── COPY TEXT ──
+  document.getElementById('btn-copy').addEventListener('click', () => {
+    if (!window._lastResults) return;
+    const { data, city, catLabel, selectedSet } = window._lastResults;
+    const selected = data.shortlist.filter(i => selectedSet.has(i.rank));
+    if (!selected.length) return;
+
+    let text = `Top Picks — ${catLabel} in ${city}\n\n`;
+    if (selected.find(i => i.name === data.top_pick))
+      text += `⭐ TOP PICK: ${data.top_pick}\n${data.top_pick_reason}\n\n`;
+    text += 'SELECTED PICKS\n';
+    selected.forEach(i => {
+      text += `\n${i.rank}. ${i.name}`;
+      if (i.rating) text += ` (${i.rating.toFixed(1)}★)`;
+      text += `\n   ${i.why_its_good}\n   🚶 ${i.walkability}\n`;
+      if (i.review) text += `   "${i.review}"\n`;
+    });
+
+    const btn = document.getElementById('btn-copy');
+    copyToClipboard(text).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy Text', 2000);
+    });
+  });
+
+  // ── COPY TABLE ──
+  document.getElementById('btn-copy-table').addEventListener('click', () => {
+    if (!window._lastResults) return;
+    const { data, city, selectedSet } = window._lastResults;
+    const selected = data.shortlist.filter(i => selectedSet.has(i.rank));
+    if (!selected.length) return;
+
+    const cols = ['Rank', 'Type', 'Name', 'Rating', "Why It's Good", 'Review', 'Walkability', 'City'];
+    const rows = selected.map(i => [
+      i.rank,
+      i.type ? (i.type.charAt(0).toUpperCase() + i.type.slice(1)) : '',
+      i.name,
+      i.rating ? i.rating.toFixed(1) : '',
+      i.why_its_good || '',
+      i.review || '',
+      i.walkability || '',
+      city
+    ].map(v => String(v).replace(/\t/g, ' ')));
+
+    const tsv = [cols, ...rows].map(r => r.join('\t')).join('\n');
+    const btn = document.getElementById('btn-copy-table');
+    copyToClipboard(tsv).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy Table', 2000);
+    });
+  });
+
+  // ── RESTART ──
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    document.getElementById('city').value = '';
+    document.getElementById('neighborhood').value = '';
+    document.getElementById('notes').value = '';
+    document.getElementById('error-box').style.display = 'none';
+    showScreen('screen-entry');
+  });
+</script>
+</body>
+</html>
